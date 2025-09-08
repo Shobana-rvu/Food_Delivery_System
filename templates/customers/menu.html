@@ -22,6 +22,15 @@
         top: 10px;
         right: 10px;
       }
+      /* 🔍 Search bar style */
+      #searchInput {
+        padding: 8px;
+        width: 50%;
+        margin: 20px auto;
+        display: block;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+      }
     </style>
   </head>
   <body>
@@ -31,6 +40,10 @@
       {% for item in restaurant_name %}
       <h1 class="text-center mb-4">{{ item.restaurant_name }}</h1>
       {% endfor %}
+
+      <!-- 🔍 Search Bar -->
+      <input type="text" id="searchInput" placeholder="Search food..." />
+
       <div class="row">
         {% for food in food_items %} {% if food.availability > 0 %}
         <div class="col-md-6 col-lg-4">
@@ -150,6 +163,21 @@
           alert("Please select at least one item to order.");
         }
       }
+
+      /* 🔍 Live Search Filter */
+      document.getElementById("searchInput").addEventListener("keyup", function () {
+        let filter = this.value.toLowerCase().trim();
+        let items = document.querySelectorAll(".menu-item");
+
+        items.forEach(function (item) {
+          let name = item.querySelector("h5").textContent.toLowerCase();
+          if (filter === "" || name.includes(filter)) {
+            item.style.display = "";
+          } else {
+            item.style.display = "none";
+          }
+        });
+      });
     </script>
   </body>
 </html>

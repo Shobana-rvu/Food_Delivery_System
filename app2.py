@@ -1,7 +1,7 @@
-from curses import flash
+from flask import flash
 from datetime import datetime
 from datetime import timedelta
-import requests
+import requests 
 import os
 import pathlib
 import json
@@ -11,18 +11,17 @@ from flask import Flask,jsonify,render_template,request,redirect,url_for,session
 import flask
 import random 
 from flask_mysqldb import MySQL
-from google.oauth2 import id_token
 from google_auth_oauthlib.flow import Flow
 from pip._vendor import cachecontrol
-import google.auth.transport.requests
+import google.auth.transport.requests 
 from functools import wraps
-# import MySQLdb
+import MySQLdb
 
 app = Flask(__name__,static_url_path="/static")
 app.secret_key = "enter secret key"
-app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_HOST'] = '127.0.0.1'
 app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'sriroot'
+app.config['MYSQL_PASSWORD'] = 'Seenus@1973'
 app.config['MYSQL_DB'] = 'food_delivery_system'
 mysql = MySQL(app)
 
@@ -396,30 +395,47 @@ def restaurants_by_cuisine(cuisine_type):
 @login_cust
 def restaurant_menu(restaurant_id, cuisine_type):
     cur = mysql.connection.cursor()
-    cur.execute('''
-    SELECT *
-    FROM food_item 
-    JOIN restaurant ON food_item.restaurant_id = restaurant.restaurant_id 
-    WHERE restaurant.restaurant_id = %s
-    ''', (restaurant_id,))
+
+
+    filter_text = request.args.get('filter', None)
+
+    if filter_text:
+        cur.execute('''
+            SELECT *
+            FROM food_item 
+            JOIN restaurant ON food_item.restaurant_id = restaurant.restaurant_id 
+            WHERE restaurant.restaurant_id = %s
+            AND food_item.item_name LIKE %s
+        ''', (restaurant_id, f"%{filter_text}%"))
+    else:
+        cur.execute('''
+            SELECT *
+            FROM food_item 
+            JOIN restaurant ON food_item.restaurant_id = restaurant.restaurant_id 
+            WHERE restaurant.restaurant_id = %s
+        ''', (restaurant_id,))
+
     food_item_data = cur.fetchall()
     food_item_columns = [col[0] for col in cur.description]
     food_items = [dict(zip(food_item_columns, row)) for row in food_item_data]
 
     cur.execute('''
-    SELECT restaurant_name, editing_menu
-    from restaurant
-    WHERE restaurant.restaurant_id = %s
-    ''', (restaurant_id))
-    restaurant_name_data = cur.fetchall()
-    # print(restaurant_name_data)
-    restaurant_name_columns = [col[0] for col in cur.description]
-    restaurant_name = [dict(zip(restaurant_name_columns, row)) for row in restaurant_name_data]
-    if(restaurant_name_data[0][1]):
+        SELECT restaurant_name, editing_menu
+        FROM restaurant
+        WHERE restaurant.restaurant_id = %s
+    ''', (restaurant_id,))
+    restaurant_data = cur.fetchone()
+
+    if restaurant_data and restaurant_data[1]:
         return render_template("/customers/rest_unavailable.html")
-    else:
-        return render_template("/customers/menu.html",food_items=food_items,restaurant_name=restaurant_name)
     
+    return render_template(
+        "/customers/menu.html",
+        food_items=food_items,
+        restaurant_name=restaurant_data[0] if restaurant_data else "Unknown"
+    )
+
+
 @app.route('/review_submission/<restaurant_name>/<item_name>/<item_orders>/<ori_item_rating>', methods=['GET', 'POST'])
 @login_cust
 def review_submission(restaurant_name, item_name, item_orders, ori_item_rating):
@@ -816,10 +832,10 @@ def index_deliveryagent():
     return render_template('delivery/index.html', delivery=delivery, agent = agent)
     # return render_template('delivery/index.html', delivery=delivery)
 
-# @app.route('/aboutus')
-# def aboutus():
-#     # You can render the aboutus.html template here
-#     return render_template('aboutus.html')
+@app.route('/aboutus')
+def aboutus():
+      #You can render the aboutus.html template here
+     return render_template('aboutus.html')
 
 @app.route('/aboutus', methods=["GET", "POST"])
 def aboutus():
